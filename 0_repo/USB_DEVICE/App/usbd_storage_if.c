@@ -67,7 +67,9 @@
 #define STORAGE_BLK_SIZ                  0x200
 
 /* USER CODE BEGIN PRIVATE_DEFINES */
+#ifdef USB_RAM_STORAGE
 uint8_t usb_buff[STORAGE_BLK_NBR * STORAGE_BLK_SIZ];
+#endif
 /* USER CODE END PRIVATE_DEFINES */
 
 /**
@@ -244,8 +246,9 @@ int8_t STORAGE_Read_FS(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t bl
   UNUSED(buf);
   UNUSED(blk_addr);
   UNUSED(blk_len);
-
+#ifdef USB_RAM_STORAGE
   memcpy(buf, &usb_buff[blk_addr * STORAGE_BLK_SIZ], blk_len * STORAGE_BLK_SIZ);
+#endif
 
   return (USBD_OK);
   /* USER CODE END 6 */
@@ -266,8 +269,9 @@ int8_t STORAGE_Write_FS(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t b
   UNUSED(buf);
   UNUSED(blk_addr);
   UNUSED(blk_len);
-
+#ifdef USB_RAM_STORAGE
   memcpy(&usb_buff[blk_addr * STORAGE_BLK_SIZ], buf, blk_len * STORAGE_BLK_SIZ);
+#endif
 
   return (USBD_OK);
   /* USER CODE END 7 */

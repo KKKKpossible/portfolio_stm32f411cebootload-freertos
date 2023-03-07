@@ -12,6 +12,8 @@
 void apInit(void)
 {
 	hwInit();
+	apFlashInit();
+
 	initTask();
 	osKernelStart();
 }
