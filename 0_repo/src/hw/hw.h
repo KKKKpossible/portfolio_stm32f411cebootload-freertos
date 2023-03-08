@@ -14,7 +14,7 @@
 #include "i2c.h"
 #include "spi.h"
 #include "usb_device.h"
-
+#include "usart.h"
 
 void hwInit(void);
 
