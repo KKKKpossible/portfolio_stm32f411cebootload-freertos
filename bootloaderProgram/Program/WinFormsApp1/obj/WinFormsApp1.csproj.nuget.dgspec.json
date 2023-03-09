@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\ksj10\\Desktop\\bootloaderProgram\\Program\\WinFormsApp1\\WinFormsApp1.csproj": {}
+    "C:\\Users\\ksj10\\Desktop\\f411_bootloader_freertos\\bootloaderProgram\\Program\\WinFormsApp1\\WinFormsApp1.csproj": {}
   },
   "projects": {
-    "C:\\Users\\ksj10\\Desktop\\bootloaderProgram\\Program\\WinFormsApp1\\WinFormsApp1.csproj": {
+    "C:\\Users\\ksj10\\Desktop\\f411_bootloader_freertos\\bootloaderProgram\\Program\\WinFormsApp1\\WinFormsApp1.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\ksj10\\Desktop\\bootloaderProgram\\Program\\WinFormsApp1\\WinFormsApp1.csproj",
+        "projectUniqueName": "C:\\Users\\ksj10\\Desktop\\f411_bootloader_freertos\\bootloaderProgram\\Program\\WinFormsApp1\\WinFormsApp1.csproj",
         "projectName": "WinFormsApp1",
-        "projectPath": "C:\\Users\\ksj10\\Desktop\\bootloaderProgram\\Program\\WinFormsApp1\\WinFormsApp1.csproj",
+        "projectPath": "C:\\Users\\ksj10\\Desktop\\f411_bootloader_freertos\\bootloaderProgram\\Program\\WinFormsApp1\\WinFormsApp1.csproj",
         "packagesPath": "C:\\Users\\ksj10\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\ksj10\\Desktop\\bootloaderProgram\\Program\\WinFormsApp1\\obj\\",
+        "outputPath": "C:\\Users\\ksj10\\Desktop\\f411_bootloader_freertos\\bootloaderProgram\\Program\\WinFormsApp1\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\ksj10\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -39,6 +39,12 @@
       "frameworks": {
         "net6.0-windows7.0": {
           "targetAlias": "net6.0-windows",
+          "dependencies": {
+            "System.IO.Ports": {
+              "target": "Package",
+              "version": "[7.0.0, )"
+            }
+          },
           "imports": [
             "net461",
             "net462",

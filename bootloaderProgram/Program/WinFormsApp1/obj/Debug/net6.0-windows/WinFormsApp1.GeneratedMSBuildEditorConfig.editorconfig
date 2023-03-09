@@ -14,4 +14,4 @@ build_property.PlatformNeutralAssembly =
 build_property.EnforceExtendedAnalyzerRules = 
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = WinFormsApp1
-build_property.ProjectDir = C:\Users\ksj10\Desktop\bootloaderProgram\Program\WinFormsApp1\
+build_property.ProjectDir = C:\Users\ksj10\Desktop\f411_bootloader_freertos\bootloaderProgram\Program\WinFormsApp1\

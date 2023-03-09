@@ -13,6 +13,7 @@
 #include "cmsis_os.h"
 #include "ap_flash.h"
 #include "ap_boot_loader.h"
+#include "ap_parser.h"
 
 
 void apInit(void);

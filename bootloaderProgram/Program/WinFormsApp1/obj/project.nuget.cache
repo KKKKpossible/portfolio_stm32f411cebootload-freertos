@@ -1,8 +1,16 @@
 {
   "version": 2,
-  "dgSpecHash": "v8k0/1+lS/hrHf2hKjkGG/vKvM/xAR5JCbTzyo0hRB0i6bnZtS+980/IGCkG67Er+se7BQ5IvBliUZ/oGgrikA==",
+  "dgSpecHash": "/GN7EPIMfTPeB0R1moWEQcPkayvsH/xFmAjvCibSQyZm2/fPGR8Hc6jTIGCZcC6JdBYv2vRv2niOrErWp+U1ag==",
   "success": true,
-  "projectFilePath": "C:\\Users\\ksj10\\Desktop\\bootloaderProgram\\Program\\WinFormsApp1\\WinFormsApp1.csproj",
-  "expectedPackageFiles": [],
+  "projectFilePath": "C:\\Users\\ksj10\\Desktop\\f411_bootloader_freertos\\bootloaderProgram\\Program\\WinFormsApp1\\WinFormsApp1.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\ksj10\\.nuget\\packages\\runtime.linux-arm.runtime.native.system.io.ports\\7.0.0\\runtime.linux-arm.runtime.native.system.io.ports.7.0.0.nupkg.sha512",
+    "C:\\Users\\ksj10\\.nuget\\packages\\runtime.linux-arm64.runtime.native.system.io.ports\\7.0.0\\runtime.linux-arm64.runtime.native.system.io.ports.7.0.0.nupkg.sha512",
+    "C:\\Users\\ksj10\\.nuget\\packages\\runtime.linux-x64.runtime.native.system.io.ports\\7.0.0\\runtime.linux-x64.runtime.native.system.io.ports.7.0.0.nupkg.sha512",
+    "C:\\Users\\ksj10\\.nuget\\packages\\runtime.native.system.io.ports\\7.0.0\\runtime.native.system.io.ports.7.0.0.nupkg.sha512",
+    "C:\\Users\\ksj10\\.nuget\\packages\\runtime.osx-arm64.runtime.native.system.io.ports\\7.0.0\\runtime.osx-arm64.runtime.native.system.io.ports.7.0.0.nupkg.sha512",
+    "C:\\Users\\ksj10\\.nuget\\packages\\runtime.osx-x64.runtime.native.system.io.ports\\7.0.0\\runtime.osx-x64.runtime.native.system.io.ports.7.0.0.nupkg.sha512",
+    "C:\\Users\\ksj10\\.nuget\\packages\\system.io.ports\\7.0.0\\system.io.ports.7.0.0.nupkg.sha512"
+  ],
   "logs": []
 }

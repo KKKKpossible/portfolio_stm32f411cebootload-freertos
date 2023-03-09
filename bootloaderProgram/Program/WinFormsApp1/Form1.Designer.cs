@@ -28,12 +28,15 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
             this.button1 = new System.Windows.Forms.Button();
             this.textBox1 = new System.Windows.Forms.TextBox();
             this.button2 = new System.Windows.Forms.Button();
             this.textBox2 = new System.Windows.Forms.TextBox();
             this.comboBox1 = new System.Windows.Forms.ComboBox();
+            this.bindingSource1 = new System.Windows.Forms.BindingSource(this.components);
+            ((System.ComponentModel.ISupportInitialize)(this.bindingSource1)).BeginInit();
             this.SuspendLayout();
             // 
             // openFileDialog1
@@ -55,7 +58,7 @@
             this.textBox1.Location = new System.Drawing.Point(302, 172);
             this.textBox1.Name = "textBox1";
             this.textBox1.ReadOnly = true;
-            this.textBox1.Size = new System.Drawing.Size(268, 23);
+            this.textBox1.Size = new System.Drawing.Size(395, 23);
             this.textBox1.TabIndex = 1;
             // 
             // button2
@@ -66,6 +69,7 @@
             this.button2.TabIndex = 2;
             this.button2.Text = "WRITE";
             this.button2.UseVisualStyleBackColor = true;
+            this.button2.Click += new System.EventHandler(this.button2_Click);
             // 
             // textBox2
             // 
@@ -82,6 +86,7 @@
             this.comboBox1.Name = "comboBox1";
             this.comboBox1.Size = new System.Drawing.Size(121, 23);
             this.comboBox1.TabIndex = 4;
+            this.comboBox1.Click += new System.EventHandler(this.comboBox1_Click);
             // 
             // Form1
             // 
@@ -95,6 +100,7 @@
             this.Controls.Add(this.button1);
             this.Name = "Form1";
             this.Text = "Form1";
+            ((System.ComponentModel.ISupportInitialize)(this.bindingSource1)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -108,5 +114,6 @@
         private Button button2;
         private TextBox textBox2;
         private ComboBox comboBox1;
+        private BindingSource bindingSource1;
     }
 }
