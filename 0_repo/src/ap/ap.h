@@ -14,6 +14,8 @@
 #include "ap_flash.h"
 #include "ap_boot_loader.h"
 #include "ap_parser.h"
+#include "ap_comm.h"
+#include "ap_sys_state.h"
 
 
 void apInit(void);

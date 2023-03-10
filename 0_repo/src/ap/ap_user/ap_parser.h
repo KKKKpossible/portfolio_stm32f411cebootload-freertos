@@ -14,10 +14,9 @@
 
 typedef struct
 {
-    uint8_t buff[DEF_PARSER_BUFF_LENGTH];
+    uint8_t buff[DEF_COMM_BUFF_LENGTH];
     int head;
     int tail;
-    uint32_t whole_length;
 }parser_t;
 
 

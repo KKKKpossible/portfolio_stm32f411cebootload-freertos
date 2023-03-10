@@ -15,7 +15,7 @@
 #include "stdbool.h"
 
 
-#define DEF_PARSER_BUFF_LENGTH (255U)
+#define DEF_COMM_BUFF_LENGTH (255U)
 
 
 #endif /* COMMON_DEF_H_ */

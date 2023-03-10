@@ -70,3 +70,13 @@ void Error_Handler(void)
   {
   }
 }
+
+void delay(uint32_t tick)
+{
+    HAL_Delay(tick);
+}
+
+uint32_t millis(void)
+{
+    return HAL_GetTick();
+}

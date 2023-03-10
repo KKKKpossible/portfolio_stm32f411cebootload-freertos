@@ -13,6 +13,9 @@ void apInit(void)
 {
 	hwInit();
 	apFlashInit();
+	apSysStateInit();
+	apCommInit();
+	apParserInit();
 	apBootInit();
 
 	initTask();
