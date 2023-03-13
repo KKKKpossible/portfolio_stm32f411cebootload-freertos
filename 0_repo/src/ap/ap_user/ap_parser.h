@@ -12,6 +12,22 @@
 #include "ap.h"
 
 
+enum special_bit_enum
+{
+    AP_PAR_SBE_START = 0,
+    AP_PAR_SBE_STOP = 1,
+    AP_PAR_SBE_CLEAR = 2,
+    AP_PAR_SBE_SPECIAL = '*',
+};
+
+enum protocol_index_enum
+{
+    AP_PAR_PIE_CMD = 0,
+    AP_PAR_PIE_DATA_LENGTH_MSB,
+    AP_PAR_PIE_DATA_LENGTH_LSB,
+    AP_PAR_PIE_DATA_DATA_START,
+};
+
 typedef struct
 {
     uint8_t buff[DEF_COMM_BUFF_LENGTH];
@@ -24,6 +40,8 @@ extern parser_t parser_inst;
 
 
 void apParserInit(void);
+void apParseOperate(void);
+void apParserFetchComm(void);
 void apParserPush(uint8_t data);
 
 

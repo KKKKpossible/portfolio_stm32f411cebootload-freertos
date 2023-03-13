@@ -76,8 +76,24 @@ namespace WinFormsApp1
 
             transmitLoop(cmd: (byte)Def.CMD_ENUM.TX_START);
         }
+        
+        void pushDataOnList(ref List<byte> buffer, byte data)
+        {
+            if(buffer.Count > def_inst.Transbuff_length_max)
+            {
+                MessageBox.Show("tx buffer full");
+            }
+            else
+            {
+                buffer.Add(data);
+                if (data == (byte)Def.PACKET.SPECIAL_CHAR)
+                {
+                    buffer.Add((byte)PACKET.SPECIAL_CLEAR);
+                }
+            }
+        }
 
-        void cmdRetProcedure(ref byte[] buffer, byte cmd, bool tx_mode, ref int ret_buffer_length)
+        void cmdRetProcedure(ref List<byte> buffer, byte cmd, bool tx_mode, ref int ret_buffer_length)
         {
             if(tx_mode == true)
             {
@@ -87,27 +103,27 @@ namespace WinFormsApp1
                 switch (cmd)
                 {
                     case (byte)Def.CMD_ENUM.TX_START:
-                        buffer[(int)Def.COMM_PROTOCOL_INDEX.CMD_INDEX] = cmd;
-                        buffer[(int)Def.COMM_PROTOCOL_INDEX.DATA_L_MSB_INDEX] = 0;
-                        buffer[(int)Def.COMM_PROTOCOL_INDEX.DATA_L_LSB_INDEX] = 0;
+                        pushDataOnList(buffer: ref buffer, data: cmd);
+                        pushDataOnList(buffer: ref buffer, data: 0);
+                        pushDataOnList(buffer: ref buffer, data: 0);
                         
                         for(int i = (int)Def.COMM_PROTOCOL_INDEX.CMD_INDEX + 1; i < (int)Def.COMM_PROTOCOL_INDEX.DATA_START_ONLYCMDCHECKSUM_INDEX; i++)
                         {
                             checksum ^= buffer[i];
                         }
-                        buffer[(int)Def.COMM_PROTOCOL_INDEX.DATA_START_ONLYCMDCHECKSUM_INDEX] = checksum;
-                        buffer[(int)Def.COMM_PROTOCOL_INDEX.ONLYCMD_END_SPECIAL_INDEX] = (byte)Def.PACKET.SPECIAL_CHAR;
-                        buffer[(int)Def.COMM_PROTOCOL_INDEX.ONLYCMD_END_INDEX] = (byte)Def.PACKET.END_CHAR;
+                        pushDataOnList(buffer: ref buffer, data: checksum);
+                        buffer.Add((byte)Def.PACKET.SPECIAL_CHAR);
+                        buffer.Add((byte)Def.PACKET.END_CHAR);
                         break;
                     case (byte)Def.CMD_ENUM.FILE_WRITE:
                         byte data_length_msb = (byte)(comm_inst.Transfer.Count >> 8);
                         byte data_length_lsb = (byte)comm_inst.Transfer.Count;
                         int data_length = comm_inst.Transfer.Count;
 
-                        buffer[(int)Def.COMM_PROTOCOL_INDEX.CMD_INDEX] = cmd;
-                        buffer[(int)Def.COMM_PROTOCOL_INDEX.DATA_L_MSB_INDEX] = data_length_msb;
-                        buffer[(int)Def.COMM_PROTOCOL_INDEX.DATA_L_LSB_INDEX] = data_length_lsb;
-                        int buffer_length = (int)Def.COMM_PROTOCOL_INDEX.DATA_L_LSB_INDEX + 1;
+                        pushDataOnList(buffer: ref buffer, data: cmd);
+                        pushDataOnList(buffer: ref buffer, data: data_length_msb);
+                        pushDataOnList(buffer: ref buffer, data: data_length_lsb);
+
                         for (int i = 0; i < data_length; i++)
                         {
                             int index = i + (int)Def.COMM_PROTOCOL_INDEX.DATA_START_ONLYCMDCHECKSUM_INDEX;
@@ -115,50 +131,42 @@ namespace WinFormsApp1
                             {
                                 break;
                             }
-                            buffer[index] = comm_inst.Transfer.Dequeue();
-                            if (buffer[index] == (byte)Def.PACKET.SPECIAL_CHAR)
-                            {
-                                index += 1;
-                                i += 1;
-                                buffer_length += 1;
-                                buffer[index] = (byte)Def.PACKET.SPECIAL_CLEAR;
-                            }
-                            buffer_length += 1;
+                            pushDataOnList(buffer: ref buffer, data: comm_inst.Transfer.Dequeue());
                         }
-                        for (int i = (int)Def.COMM_PROTOCOL_INDEX.CMD_INDEX + 1; i < buffer_length - 3; i++)
+                        for (int i = (int)Def.COMM_PROTOCOL_INDEX.CMD_INDEX + 1; i < buffer.Count; i++)
                         {
                             checksum ^= buffer[i];
                         }
-                        ret_buffer_length = buffer_length;
-                        buffer[buffer_length - 3] = checksum;
-                        buffer[buffer_length - 2] = (byte)Def.PACKET.SPECIAL_CHAR;
-                        buffer[buffer_length - 1] = (byte)Def.PACKET.END_CHAR;
+                        pushDataOnList(buffer: ref buffer, data: checksum);
+                        buffer.Add((byte)PACKET.SPECIAL_CHAR);
+                        buffer.Add((byte)PACKET.END_CHAR);
+                        ret_buffer_length = buffer.Count;
                         break;
                     case (byte)Def.CMD_ENUM.FILE_READ:
-                        buffer[(int)Def.COMM_PROTOCOL_INDEX.CMD_INDEX] = cmd;
-                        buffer[(int)Def.COMM_PROTOCOL_INDEX.DATA_L_MSB_INDEX] = 0;
-                        buffer[(int)Def.COMM_PROTOCOL_INDEX.DATA_L_LSB_INDEX] = 0;
+                        pushDataOnList(buffer: ref buffer, data: cmd);
+                        pushDataOnList(buffer: ref buffer, data: 0);
+                        pushDataOnList(buffer: ref buffer, data: 0);
 
                         for (int i = (int)Def.COMM_PROTOCOL_INDEX.CMD_INDEX + 1; i < (int)Def.COMM_PROTOCOL_INDEX.DATA_START_ONLYCMDCHECKSUM_INDEX; i++)
                         {
                             checksum ^= buffer[i];
                         }
-                        buffer[(int)Def.COMM_PROTOCOL_INDEX.DATA_START_ONLYCMDCHECKSUM_INDEX] = checksum;
-                        buffer[(int)Def.COMM_PROTOCOL_INDEX.ONLYCMD_END_SPECIAL_INDEX] = (byte)Def.PACKET.SPECIAL_CHAR;
-                        buffer[(int)Def.COMM_PROTOCOL_INDEX.ONLYCMD_END_INDEX] = (byte)Def.PACKET.END_CHAR;
+                        pushDataOnList(buffer: ref buffer, data: checksum);
+                        buffer.Add((byte)Def.PACKET.SPECIAL_CHAR);
+                        buffer.Add((byte)Def.PACKET.END_CHAR);
                         break;
                     case (byte)Def.CMD_ENUM.TX_END:
-                        buffer[(int)Def.COMM_PROTOCOL_INDEX.CMD_INDEX] = cmd;
-                        buffer[(int)Def.COMM_PROTOCOL_INDEX.DATA_L_MSB_INDEX] = 0;
-                        buffer[(int)Def.COMM_PROTOCOL_INDEX.DATA_L_LSB_INDEX] = 0;
+                        pushDataOnList(buffer: ref buffer, data: cmd);
+                        pushDataOnList(buffer: ref buffer, data: 0);
+                        pushDataOnList(buffer: ref buffer, data: 0);
 
                         for (int i = (int)Def.COMM_PROTOCOL_INDEX.CMD_INDEX + 1; i < (int)Def.COMM_PROTOCOL_INDEX.DATA_START_ONLYCMDCHECKSUM_INDEX; i++)
                         {
                             checksum ^= buffer[i];
                         }
-                        buffer[(int)Def.COMM_PROTOCOL_INDEX.DATA_START_ONLYCMDCHECKSUM_INDEX] = checksum;
-                        buffer[(int)Def.COMM_PROTOCOL_INDEX.ONLYCMD_END_SPECIAL_INDEX] = (byte)Def.PACKET.SPECIAL_CHAR;
-                        buffer[(int)Def.COMM_PROTOCOL_INDEX.ONLYCMD_END_INDEX] = (byte)Def.PACKET.END_CHAR;
+                        pushDataOnList(buffer: ref buffer, data: checksum);
+                        buffer.Add((byte)Def.PACKET.SPECIAL_CHAR);
+                        buffer.Add((byte)Def.PACKET.END_CHAR);
                         break;
                     case (byte)Def.CMD_ENUM.ERR_CHECKSUM:
                         break;
@@ -199,12 +207,12 @@ namespace WinFormsApp1
             if(comm_inst.Port.IsOpen)
             {
                 int tx_buffer_length = 0;
-                byte[] buffer = new byte[def_inst.Transbuff_length_max];
-                buffer[(int)Def.COMM_PROTOCOL_INDEX.START_SPECIAL_INDEX] = (byte)'*';
-                buffer[(int)Def.COMM_PROTOCOL_INDEX.START_INDEX] = 0;
+                List<byte> buffer = new List<byte>();
+                buffer.Add((byte)'*');
+                buffer.Add(0);
                 cmdRetProcedure(buffer: ref buffer, cmd: cmd, tx_mode: true, ret_buffer_length: ref tx_buffer_length);
 
-                comm_inst.Port.Write(buffer: buffer, offset: 0, count: tx_buffer_length);
+                comm_inst.Port.Write(buffer: buffer.ToArray(), offset: 0, count: tx_buffer_length);
             }
         }
     }
