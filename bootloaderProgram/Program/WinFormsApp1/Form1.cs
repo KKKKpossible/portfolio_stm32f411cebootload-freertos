@@ -1,3 +1,4 @@
+using System;
 using System.IO.Ports;
 using System.Security.Cryptography.Xml;
 using System.Text;
@@ -31,7 +32,7 @@ namespace WinFormsApp1
                 using(BinaryReader file_reader = new BinaryReader(file_stream))
                 {
                     long length = file_reader.BaseStream.Length;
-                    comm_inst.Data = new List<byte>(file_reader.ReadBytes((int)length));   
+                    comm_inst.File_data = new List<byte>(file_reader.ReadBytes((int)length));   
                 }
             }
             else
@@ -47,173 +48,265 @@ namespace WinFormsApp1
 
         private void button2_Click(object sender, EventArgs e)
         {
-            comm_inst.Port.PortName = comboBox1.Text;
-            comm_inst.Port.BaudRate = 115200;
-            comm_inst.Port.Parity = Parity.None;
-            comm_inst.Port.DataBits = 8;
-            comm_inst.Port.StopBits = StopBits.One;
-            comm_inst.Port.DataReceived += new SerialDataReceivedEventHandler(dataReceived);
+            if(comm_inst.Port.IsOpen == false)
+            {
+                comm_inst.Port.PortName = comboBox1.Text;
+                comm_inst.Port.BaudRate = 115200;
+                comm_inst.Port.Parity = Parity.None;
+                comm_inst.Port.DataBits = 8;
+                comm_inst.Port.StopBits = StopBits.One;
+                comm_inst.Port.DataReceived += new SerialDataReceivedEventHandler(dataReceived);
+                comm_inst.Port.Open();
+                button3.Text = "OPEN";
+            }
+            if (comm_inst.File_data.Count != 0)
+            {
+                comm_inst.File_writer.Clear();
 
-            comm_inst.Port.Open();
-            startTransmit();
-
-            comm_inst.Port.Close();
+                for (int i = 0; i < comm_inst.File_data.Count; i++)
+                {
+                    comm_inst.File_writer.Enqueue(comm_inst.File_data[i]);
+                }
+            }
+            startTransmit((byte)Def.CMD_ENUM.TX_START);
         }
 
         void dataReceived(object sender, SerialDataReceivedEventArgs e)
         {
+            SerialPort port_buff = (SerialPort)sender;
+            int length = port_buff.BytesToRead;
+            byte[] buffer = new byte[length];
+            port_buff.Read(buffer, 0, length);
 
+            for(int i = 0; i < length; i++)
+            {
+                comm_inst.Receiver.Enqueue(buffer[i]);
+            }
         }
 
-        void startTransmit()
+        void startTransmit(byte cmd)
         {
-            comm_inst.Transfer = new Queue<byte>();
-
-            comm_inst.Data.ForEach(buff =>
+            if (comm_inst.Port.IsOpen)
             {
-                comm_inst.Transfer.Enqueue(buff);
-            });
+                List<byte> buffer = new List<byte>();
+                List<byte> tx_buff;
 
-            transmitLoop(cmd: (byte)Def.CMD_ENUM.TX_START);
+                cmdRetProcedure(list: comm_inst.Tx_buffer, cmd: cmd);
+                tx_buff = comm_inst.Tx_buffer;
+
+                foreach (byte data in tx_buff)
+                {
+                    comm_inst.Transfer.Enqueue(data);
+                }
+            }
         }
         
-        void pushDataOnList(ref List<byte> buffer, byte data)
+        void pushDataOnList(List<byte> list, byte data, ref byte checksum)
         {
-            if(buffer.Count > def_inst.Transbuff_length_max)
+            list.Add(data);
+
+            if (data == (byte)Def.PACKET.SPECIAL_CHAR)
             {
-                MessageBox.Show("tx buffer full");
+                list.Add((byte)PACKET.SPECIAL_CLEAR);
             }
-            else
+
+            checksum ^= data;
+        }
+
+        void cmdRetProcedure(List<byte> list, byte cmd)
+        {
+            byte checksum = cmd;
+
+            switch (cmd)
             {
-                buffer.Add(data);
-                if (data == (byte)Def.PACKET.SPECIAL_CHAR)
-                {
-                    buffer.Add((byte)PACKET.SPECIAL_CLEAR);
-                }
+                case (byte)Def.CMD_ENUM.TX_START:
+                    {
+                        byte[] write_start_address = new byte[4];
+
+                        list.Add((byte)'*');
+                        list.Add(0);
+                        pushDataOnList(list: list, data: cmd, checksum: ref checksum);
+                        pushDataOnList(list: list, data: 0, checksum: ref checksum);
+                        pushDataOnList(list: list, data: (byte)write_start_address.Length, checksum: ref checksum);
+
+                        UInt32 address = Convert.ToUInt32(textBox3.Text, 16);
+
+                        write_start_address[0] = (byte)((address & 0xFF000000) >> 24);
+                        write_start_address[1] = (byte)((address & 0x00FF0000) >> 16);
+                        write_start_address[2] = (byte)((address & 0x0000FF00) >> 8);
+                        write_start_address[3] = (byte)((address & 0x000000FF));
+
+                        pushDataOnList(list: list, data: write_start_address[0], checksum: ref checksum);
+                        pushDataOnList(list: list, data: write_start_address[1], checksum: ref checksum);
+                        pushDataOnList(list: list, data: write_start_address[2], checksum: ref checksum);
+                        pushDataOnList(list: list, data: write_start_address[3], checksum: ref checksum);
+
+                        pushDataOnList(list: list, data: checksum, checksum: ref checksum);
+                        list.Add((byte)Def.PACKET.SPECIAL_CHAR);
+                        list.Add((byte)Def.PACKET.END_CHAR);
+                        break;
+                    }
+                case (byte)Def.CMD_ENUM.FILE_WRITE:
+                    byte data_length_msb = (byte)(comm_inst.File_data.Count >> 8);
+                    byte data_length_lsb = (byte)comm_inst.File_data.Count;
+                    int data_length = comm_inst.File_data.Count;
+
+                    list.Add((byte)'*');
+                    list.Add(0);
+                    pushDataOnList(list: list, data: cmd, checksum: ref checksum);
+                    pushDataOnList(list: list, data: data_length_msb, checksum: ref checksum);
+                    pushDataOnList(list: list, data: data_length_lsb, checksum: ref checksum);
+
+                    if(def_inst.Trans_data_length_max < comm_inst.File_writer.Count)
+                    {
+                        for(int i = 0; i < def_inst.Trans_data_length_max; i++)
+                        {
+                            pushDataOnList(list: list, data: comm_inst.File_writer.Dequeue(), checksum: ref checksum);
+                        }
+                    }
+                    else
+                    {
+                        for (int i = 0; i < comm_inst.File_writer.Count; i++)
+                        {
+                            pushDataOnList(list: list, data: comm_inst.File_writer.Dequeue(), checksum: ref checksum);
+                        }
+                    }
+                    pushDataOnList(list: list, data: checksum, checksum: ref checksum);
+                    list.Add((byte)PACKET.SPECIAL_CHAR);
+                    list.Add((byte)PACKET.END_CHAR);
+                    break;
+                case (byte)Def.CMD_ENUM.FILE_READ:
+                    list.Clear();
+                    break;
+                case (byte)Def.CMD_ENUM.TX_END:
+                    list.Clear();
+                    break;
+                case (byte)Def.CMD_ENUM.ERR_CHECKSUM:
+                    break;
+                case (byte)Def.CMD_ENUM.ERR_TIMEOUT:
+                    break;
+                default:
+                    break;
             }
         }
 
-        void cmdRetProcedure(ref List<byte> buffer, byte cmd, bool tx_mode, ref int ret_buffer_length)
+        void transmitLoop()
         {
-            if(tx_mode == true)
+            if(comm_inst.Transfer.Count != 0)
             {
-                byte checksum = cmd;
-                ret_buffer_length = 8;
-
-                switch (cmd)
+                int tx_length = 0;
+                byte[] writer = new byte[def_inst.Trans_data_one_time];
+                int transfer_count = comm_inst.Transfer.Count;
+                if (transfer_count < def_inst.Trans_data_one_time)
                 {
-                    case (byte)Def.CMD_ENUM.TX_START:
-                        pushDataOnList(buffer: ref buffer, data: cmd);
-                        pushDataOnList(buffer: ref buffer, data: 0);
-                        pushDataOnList(buffer: ref buffer, data: 0);
-                        
-                        for(int i = (int)Def.COMM_PROTOCOL_INDEX.CMD_INDEX + 1; i < (int)Def.COMM_PROTOCOL_INDEX.DATA_START_ONLYCMDCHECKSUM_INDEX; i++)
-                        {
-                            checksum ^= buffer[i];
-                        }
-                        pushDataOnList(buffer: ref buffer, data: checksum);
-                        buffer.Add((byte)Def.PACKET.SPECIAL_CHAR);
-                        buffer.Add((byte)Def.PACKET.END_CHAR);
-                        break;
-                    case (byte)Def.CMD_ENUM.FILE_WRITE:
-                        byte data_length_msb = (byte)(comm_inst.Transfer.Count >> 8);
-                        byte data_length_lsb = (byte)comm_inst.Transfer.Count;
-                        int data_length = comm_inst.Transfer.Count;
+                    for (int i = 0; i < transfer_count; i++)
+                    {
+                        writer[i] = comm_inst.Transfer.Dequeue();
+                        tx_length += 1;
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < def_inst.Trans_data_one_time; i++)
+                    {
+                        writer[i] = comm_inst.Transfer.Dequeue();
+                        tx_length += 1;
+                    }
+                }
 
-                        pushDataOnList(buffer: ref buffer, data: cmd);
-                        pushDataOnList(buffer: ref buffer, data: data_length_msb);
-                        pushDataOnList(buffer: ref buffer, data: data_length_lsb);
+                comm_inst.Port.Write(writer, 0, tx_length);
+            }
+        }
 
-                        for (int i = 0; i < data_length; i++)
-                        {
-                            int index = i + (int)Def.COMM_PROTOCOL_INDEX.DATA_START_ONLYCMDCHECKSUM_INDEX;
-                            if(index >= def_inst.Transbuff_length_max - 3)
+        private void button3_Click(object sender, EventArgs e)
+        {
+            if(button3.Text == "OPEN")
+            {
+                button3.Text = "CLOSE";
+            }
+            if(comm_inst.Port.IsOpen == true)
+            {
+                MessageBox.Show("SERIAL PORT IS CLOSED");
+                comm_inst.Port.Close();
+            }
+        }
+
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            // receiver timer
+            bool special_char_detected = false;
+
+            if(comm_inst.Parsing_start == false)
+            {
+                comm_inst.Rx_time_out_tick = 0;
+
+                while (comm_inst.Receiver.Count != 0)
+                {
+                    comm_inst.Parsing_start = true;
+
+                    Application.DoEvents();
+                    byte data_buff = comm_inst.Receiver.Dequeue();
+
+                    switch (data_buff)
+                    {
+                        case (byte)Def.PACKET.SPECIAL_CHAR:
+                            special_char_detected = true;
+                            break;
+                        case (byte)Def.PACKET.START_CHAR:
+                            if (special_char_detected == true)
                             {
-                                break;
+                                comm_inst.clearParseBuffer();
                             }
-                            pushDataOnList(buffer: ref buffer, data: comm_inst.Transfer.Dequeue());
-                        }
-                        for (int i = (int)Def.COMM_PROTOCOL_INDEX.CMD_INDEX + 1; i < buffer.Count; i++)
-                        {
-                            checksum ^= buffer[i];
-                        }
-                        pushDataOnList(buffer: ref buffer, data: checksum);
-                        buffer.Add((byte)PACKET.SPECIAL_CHAR);
-                        buffer.Add((byte)PACKET.END_CHAR);
-                        ret_buffer_length = buffer.Count;
-                        break;
-                    case (byte)Def.CMD_ENUM.FILE_READ:
-                        pushDataOnList(buffer: ref buffer, data: cmd);
-                        pushDataOnList(buffer: ref buffer, data: 0);
-                        pushDataOnList(buffer: ref buffer, data: 0);
-
-                        for (int i = (int)Def.COMM_PROTOCOL_INDEX.CMD_INDEX + 1; i < (int)Def.COMM_PROTOCOL_INDEX.DATA_START_ONLYCMDCHECKSUM_INDEX; i++)
-                        {
-                            checksum ^= buffer[i];
-                        }
-                        pushDataOnList(buffer: ref buffer, data: checksum);
-                        buffer.Add((byte)Def.PACKET.SPECIAL_CHAR);
-                        buffer.Add((byte)Def.PACKET.END_CHAR);
-                        break;
-                    case (byte)Def.CMD_ENUM.TX_END:
-                        pushDataOnList(buffer: ref buffer, data: cmd);
-                        pushDataOnList(buffer: ref buffer, data: 0);
-                        pushDataOnList(buffer: ref buffer, data: 0);
-
-                        for (int i = (int)Def.COMM_PROTOCOL_INDEX.CMD_INDEX + 1; i < (int)Def.COMM_PROTOCOL_INDEX.DATA_START_ONLYCMDCHECKSUM_INDEX; i++)
-                        {
-                            checksum ^= buffer[i];
-                        }
-                        pushDataOnList(buffer: ref buffer, data: checksum);
-                        buffer.Add((byte)Def.PACKET.SPECIAL_CHAR);
-                        buffer.Add((byte)Def.PACKET.END_CHAR);
-                        break;
-                    case (byte)Def.CMD_ENUM.ERR_CHECKSUM:
-                        break;
-                    case (byte)Def.CMD_ENUM.ERR_TIMEOUT:
-                        break;
-                    default:
-                        break;
+                            else
+                            {
+                                comm_inst.pushParseBuffer(data_buff);
+                            }
+                            special_char_detected = false;
+                            break;
+                        case (byte)Def.PACKET.END_CHAR:
+                            if (special_char_detected == true)
+                            {
+                                startTransmit(comm_inst.parseOperate());
+                                comm_inst.Parsing_start = false;
+                            }
+                            else
+                            {
+                                comm_inst.pushParseBuffer(data_buff);
+                            }
+                            special_char_detected = false;
+                            break;
+                        case (byte)Def.PACKET.SPECIAL_CLEAR:
+                            if (special_char_detected == true)
+                            {
+                                comm_inst.pushParseBuffer((byte)Def.PACKET.SPECIAL_CHAR);
+                            }
+                            else
+                            {
+                                comm_inst.pushParseBuffer(data_buff);
+                            }
+                            special_char_detected = false;
+                            break;
+                        default:
+                            comm_inst.pushParseBuffer(data_buff);
+                            special_char_detected = false;
+                            break;
+                    }
                 }
             }
             else
             {
-                switch (cmd)
+                comm_inst.Rx_time_out_tick += 1;
+                if(comm_inst.Rx_time_out_tick > 100)
                 {
-                    case (byte)Def.CMD_ENUM.TX_START:
-                        transmitLoop(cmd: (byte)Def.CMD_ENUM.FILE_WRITE);
-                        break;
-                    case (byte)Def.CMD_ENUM.FILE_WRITE:
-                        transmitLoop(cmd: (byte)Def.CMD_ENUM.TX_END);
-                        break;
-                    case (byte)Def.CMD_ENUM.FILE_READ:
-                        break;
-                    case (byte)Def.CMD_ENUM.TX_END:
-                        break;
-                    case (byte)Def.CMD_ENUM.ERR_CHECKSUM:
-                        MessageBox.Show("ERR_CHECKSUM");
-                        break;
-                    case (byte)Def.CMD_ENUM.ERR_TIMEOUT:
-                        MessageBox.Show("ERR_TIMEOUT");
-                        break;
-                    default:
-                        break;
+                    comm_inst.Parsing_start = false;
                 }
             }
         }
 
-        void transmitLoop(byte cmd)
+        private void timer2_Tick(object sender, EventArgs e)
         {
-            if(comm_inst.Port.IsOpen)
-            {
-                int tx_buffer_length = 0;
-                List<byte> buffer = new List<byte>();
-                buffer.Add((byte)'*');
-                buffer.Add(0);
-                cmdRetProcedure(buffer: ref buffer, cmd: cmd, tx_mode: true, ret_buffer_length: ref tx_buffer_length);
-
-                comm_inst.Port.Write(buffer: buffer.ToArray(), offset: 0, count: tx_buffer_length);
-            }
+            // tx_timer
+            transmitLoop();
         }
     }
 }

@@ -15,6 +15,7 @@
 typedef struct
 {
     uint8_t cmd_state;
+    uint32_t firmware_start_address;
 }ap_sys_t;
 
 
@@ -22,6 +23,7 @@ extern ap_sys_t ap_sys_inst;
 
 
 void apSysStateInit(void);
+void apSysStateOperate(void);
 
 
 #endif /* AP_AP_USER_AP_SYS_STATE_H_ */

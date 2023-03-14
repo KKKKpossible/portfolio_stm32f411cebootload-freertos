@@ -8,9 +8,11 @@ namespace WinFormsApp1
 {
     internal class Def
     {
-        int transbuff_length_max = 255;
+        int trans_data_length_max = 255 - 12;
+        int trans_data_one_time = 8;
 
-        public int Transbuff_length_max { get => transbuff_length_max; set => transbuff_length_max = value; }
+        public int Trans_data_length_max { get => trans_data_length_max; set => trans_data_length_max = value; }
+        public int Trans_data_one_time { get => trans_data_one_time; set => trans_data_one_time = value; }
 
         // last index - 2 = checksum
         // last index - 1 = end special index

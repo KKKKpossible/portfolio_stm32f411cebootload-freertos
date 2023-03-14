@@ -15,8 +15,11 @@
 flash_t flash_inst[SECTOR_LENGTH];
 uint32_t err_address;
 
+
 static void apFlashWriteByte(uint32_t address, uint16_t data);
 static bool apAddrInSectorCheck(uint32_t sector_num, uint32_t data_address, uint32_t data_length);
+static bool apAddrInSecterRangeCheck(uint32_t sector_num, uint32_t data_address, uint32_t data_length);
+
 
 void apFlashInit(void)
 {
@@ -141,6 +144,27 @@ static bool apAddrInSectorCheck(uint32_t sector_num, uint32_t data_address, uint
         ret = true;
     }
     if(start_data_address <= start_sector_address && stop_data_address >= stop_sector_address)
+    {
+        ret = true;
+    }
+
+    return ret;
+}
+
+static bool apAddrInSecterRangeCheck(uint32_t sector_num, uint32_t data_address, uint32_t data_length)
+{
+    bool ret = false;
+
+    uint32_t start_data_address = data_address;
+    uint32_t stop_data_address = data_address + data_length - 1;
+    uint32_t start_sector_address = flash_inst[sector_num].start_address;
+    uint32_t stop_sector_address = flash_inst[sector_num].start_address + flash_inst[sector_num].size - 1;
+
+    if(start_data_address >= start_sector_address && start_data_address <= stop_sector_address)
+    {
+        ret = true;
+    }
+    if(stop_data_address >= start_sector_address && stop_data_address <= stop_sector_address)
     {
         ret = true;
     }

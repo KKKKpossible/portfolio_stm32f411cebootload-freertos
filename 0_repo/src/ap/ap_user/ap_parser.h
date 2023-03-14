@@ -12,6 +12,11 @@
 #include "ap.h"
 
 
+enum cmd_enum
+{
+    TX_START, FILE_WRITE, FILE_READ, TX_END, ERR_CHECKSUM, ERR_TIMEOUT
+};
+
 enum special_bit_enum
 {
     AP_PAR_SBE_START = 0,

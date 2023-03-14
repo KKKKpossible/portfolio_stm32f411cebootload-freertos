@@ -267,8 +267,8 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
     uint32_t length = *Len;
     for(int i = 0; i < length; i++)
     {
-        apCommPushByte(Buf[i]);
-        ap_comm_inst.whole_length += 1;
+        apCommRxPushByte(Buf[i]);
+        ap_comm_inst.rx_whole_length += 1;
     }
 
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);

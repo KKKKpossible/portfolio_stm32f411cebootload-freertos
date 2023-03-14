@@ -14,10 +14,14 @@
 
 typedef struct
 {
-    uint8_t buff[DEF_COMM_BUFF_LENGTH];
-    int head;
-    int tail;
-    uint32_t whole_length;
+    uint8_t rx_buff[DEF_COMM_BUFF_LENGTH];
+    int rx_head;
+    int rx_tail;
+    uint32_t rx_whole_length;
+    uint8_t tx_buff[DEF_COMM_BUFF_LENGTH];
+    int tx_head;
+    int tx_tail;
+    uint32_t tx_whole_length;
 }ap_comm_t;
 
 
@@ -25,8 +29,11 @@ extern ap_comm_t ap_comm_inst;
 
 
 void apCommInit(void);
-void apCommPushByte(uint8_t data);
-uint8_t apCommPopByte(void);
+void apCommRxPushByte(uint8_t data);
+uint8_t apCommRxPopByte(void);
+void apCommTxPushByte(uint8_t data, bool check_special);
+uint8_t apCommTxPopByte(void);
+uint16_t apCommGetTxDataLength(void);
 
 
 #endif /* AP_AP_USER_AP_COMM_H_ */

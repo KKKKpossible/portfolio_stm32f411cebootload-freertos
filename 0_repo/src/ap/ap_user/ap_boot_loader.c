@@ -41,4 +41,5 @@ void apBootVertifyFirmware(void)
 static void apBootInitLoop(void)
 {
     apParserFetchComm();
+    apSysStateOperate();
 }
