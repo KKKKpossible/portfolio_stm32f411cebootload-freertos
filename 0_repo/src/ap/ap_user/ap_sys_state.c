@@ -37,79 +37,114 @@ void apSysStateOperate(void)
         {
             ap_sys_inst.cmd_state &= (uint8_t)(~(1 << TX_START));
             retCmdAct(TX_START);
-            CDC_Transmit_FS(&ap_comm_inst.tx_buff[ap_comm_inst.tx_tail], apCommGetTxDataLength());
-            ap_comm_inst.tx_tail += apCommGetTxDataLength();
-            ap_comm_inst.tx_tail %= DEF_COMM_BUFF_LENGTH;
+            txLoop();
         }
         // 1. FILE_WRITE
         if((ap_sys_inst.cmd_state & (1 << FILE_WRITE)) != 0)
         {
-            ap_sys_inst.cmd_state |= ~(1 << FILE_WRITE);
-            retCmdAct(FILE_WRITE);
-            CDC_Transmit_FS(&ap_comm_inst.tx_buff[ap_comm_inst.tx_tail], apCommGetTxDataLength());
+            ap_sys_inst.cmd_state &= (uint8_t)(~(1 << FILE_WRITE));
 
-            ap_comm_inst.tx_tail += apCommGetTxDataLength();
-            ap_comm_inst.tx_tail %= DEF_COMM_BUFF_LENGTH;
+            apBootSaveFirmware();
+            retCmdAct(FILE_WRITE);
+            txLoop();
         }
         // 2. FILE_READ
         if((ap_sys_inst.cmd_state & (1 << FILE_READ)) != 0)
         {
-            ap_sys_inst.cmd_state |= ~(1 << FILE_READ);
+            ap_sys_inst.cmd_state &= (uint8_t)(~(1 << FILE_READ));
             retCmdAct(FILE_READ);
-            CDC_Transmit_FS(&ap_comm_inst.tx_buff[ap_comm_inst.tx_tail], apCommGetTxDataLength());
-
-            ap_comm_inst.tx_tail += apCommGetTxDataLength();
-            ap_comm_inst.tx_tail %= DEF_COMM_BUFF_LENGTH;
+            txLoop();
         }
         // 3. TX_END
         if((ap_sys_inst.cmd_state & (1 << TX_END)) != 0)
         {
-            ap_sys_inst.cmd_state |= ~(1 << TX_END);
-            retCmdAct(TX_END);
-            CDC_Transmit_FS(&ap_comm_inst.tx_buff[ap_comm_inst.tx_tail], apCommGetTxDataLength());
+            ap_sys_inst.cmd_state &= (uint8_t)(~(1 << TX_END));
 
-            ap_comm_inst.tx_tail += apCommGetTxDataLength();
-            ap_comm_inst.tx_tail %= DEF_COMM_BUFF_LENGTH;
+            uint8_t checksum = 0;
+            uint8_t cmd_buff = TX_END;
+            uint8_t length = 4;
+            uint32_t time_cost = millis() - boot_inst.start_tick;
+
+            apCommTxPushByte(AP_PAR_SBE_SPECIAL, false);
+            apCommTxPushByte(AP_PAR_SBE_START, false);
+
+            apCommTxPushByte(cmd_buff, true);
+            checksum = cmd_buff;
+            apCommTxPushByte(length, true);
+            checksum ^= length;
+
+            apCommTxPushByte((uint8_t)(time_cost >> 24), true);
+            checksum ^= (uint8_t)(time_cost >> 24);
+            apCommTxPushByte((uint8_t)(time_cost >> 16), true);
+            checksum ^= (uint8_t)(time_cost >> 16);
+            apCommTxPushByte((uint8_t)(time_cost >> 8), true);
+            checksum ^= (uint8_t)(time_cost >> 8);
+            apCommTxPushByte((uint8_t)(time_cost), true);
+            checksum ^= (uint8_t)(time_cost);
+
+            apCommTxPushByte(checksum, true);
+
+            apCommTxPushByte(AP_PAR_SBE_SPECIAL, false);
+            apCommTxPushByte(AP_PAR_SBE_STOP, false);
+            txLoop();
         }
         // 4. ERR_CHECKSUM
         if((ap_sys_inst.cmd_state & (1 << ERR_CHECKSUM)) != 0)
         {
-            ap_sys_inst.cmd_state |= ~(1 << ERR_CHECKSUM);
+            ap_sys_inst.cmd_state &= (uint8_t)(~(1 << ERR_CHECKSUM));
             retCmdAct(ERR_CHECKSUM);
-            CDC_Transmit_FS(&ap_comm_inst.tx_buff[ap_comm_inst.tx_tail], apCommGetTxDataLength());
-
-            ap_comm_inst.tx_tail += apCommGetTxDataLength();
-            ap_comm_inst.tx_tail %= DEF_COMM_BUFF_LENGTH;
+            txLoop();
         }
         // 5. ERR_TIMEOUT
         if((ap_sys_inst.cmd_state & (1 << ERR_TIMEOUT)) != 0)
         {
-            ap_sys_inst.cmd_state |= ~(1 << ERR_TIMEOUT);
+            ap_sys_inst.cmd_state &= (uint8_t)(~(1 << ERR_TIMEOUT));
             retCmdAct(ERR_TIMEOUT);
-            CDC_Transmit_FS(&ap_comm_inst.tx_buff[ap_comm_inst.tx_tail], apCommGetTxDataLength());
-
-            ap_comm_inst.tx_tail += apCommGetTxDataLength();
-            ap_comm_inst.tx_tail %= DEF_COMM_BUFF_LENGTH;
+            txLoop();
         }
     }
+}
+
+void txLoop(void)
+{
+    int tx_length_left;
+
+    tx_length_left = apCommGetTxDataLength();
+    if(tx_length_left > 0)
+    {
+        if(tx_length_left > DEF_COMM_TX_WRITER_LENGTH)
+        {
+            for(int i = 0; i < DEF_COMM_TX_WRITER_LENGTH; i++)
+            {
+                ap_comm_inst.tx_writer[i] = apCommTxPopByte();
+            }
+            CDC_Transmit_FS(ap_comm_inst.tx_writer, DEF_COMM_TX_WRITER_LENGTH);
+        }
+        else
+        {
+            for(int i = 0; i < tx_length_left; i++)
+            {
+                ap_comm_inst.tx_writer[i] = apCommTxPopByte();
+            }
+            CDC_Transmit_FS(ap_comm_inst.tx_writer, DEF_COMM_TX_WRITER_LENGTH);
+        }
+    }
+
 }
 
 static void retCmdAct(uint8_t cmd)
 {
     uint8_t checksum = 0;
     uint8_t cmd_buff = cmd;
-    uint16_t length = 0;
-
+    uint8_t length = 0;
 
     apCommTxPushByte(AP_PAR_SBE_SPECIAL, false);
     apCommTxPushByte(AP_PAR_SBE_START, false);
 
     apCommTxPushByte(cmd_buff, true);
     checksum = cmd_buff;
-    apCommTxPushByte((length >> 8), true);  // data length msb
-    checksum ^= (length >> 8);
-    apCommTxPushByte((uint8_t)(length & 0xFF), true);  // data length lsb
-    checksum ^= (uint8_t)(length & 0xFF);
+    apCommTxPushByte(length, true);  // data length lsb
+    checksum ^= length;
     apCommTxPushByte(checksum, true);
 
     apCommTxPushByte(AP_PAR_SBE_SPECIAL, false);

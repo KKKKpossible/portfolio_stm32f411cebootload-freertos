@@ -85,6 +85,7 @@ void apParserPush(uint8_t data)
     }
 }
 
+// TODO: fetch data from parse buffer to instance
 void apParseOperate(void)
 {
     if(checksumProcedure() == false)
@@ -92,8 +93,7 @@ void apParseOperate(void)
         return;
     }
 
-    int data_length = (parser_inst.buff[AP_PAR_PIE_DATA_LENGTH_MSB] << 8);
-    data_length += parser_inst.buff[AP_PAR_PIE_DATA_LENGTH_LSB];
+    int data_length = parser_inst.buff[AP_PAR_PIE_DATA_LENGTH];
 
     switch(parser_inst.buff[AP_PAR_PIE_CMD])
     {
@@ -102,12 +102,27 @@ void apParseOperate(void)
             ap_sys_inst.cmd_state |= 1 << TX_START;
             if(data_length == 4)
             {
+                boot_inst.start_address |= (uint32_t)((parser_inst.buff[AP_PAR_PIE_DATA_START] << 24) & 0xFF000000);
+                boot_inst.start_address |= (uint32_t)((parser_inst.buff[AP_PAR_PIE_DATA_START + 1]<< 16) & 0x00FF0000);
+                boot_inst.start_address |= (uint32_t)((parser_inst.buff[AP_PAR_PIE_DATA_START + 2] << 8) & 0x0000FF00);
+                boot_inst.start_address |= (uint32_t)((parser_inst.buff[AP_PAR_PIE_DATA_START + 3]) & 0x000000FF);
+
+                memset(boot_inst.file_writer, '\0', sizeof(boot_inst.file_writer) / sizeof(uint8_t));
+                boot_inst.rx_file_length = 0;
+                boot_inst.start_tick = millis();
             }
             break;
         }
         case FILE_WRITE:
         {
             ap_sys_inst.cmd_state |= 1 << FILE_WRITE;
+            boot_inst.received_file_length = 0;
+            for(int i = 0; i < data_length; i++)
+            {
+                boot_inst.file_writer[i] = parser_inst.buff[AP_PAR_PIE_DATA_START + i];
+                boot_inst.rx_file_length += 1;
+                boot_inst.received_file_length += 1;
+            }
             break;
         }
         case FILE_READ:

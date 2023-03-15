@@ -21,6 +21,7 @@ typedef struct
     uint8_t tx_buff[DEF_COMM_BUFF_LENGTH];
     int tx_head;
     int tx_tail;
+    uint8_t tx_writer[DEF_COMM_TX_WRITER_LENGTH];
     uint32_t tx_whole_length;
 }ap_comm_t;
 

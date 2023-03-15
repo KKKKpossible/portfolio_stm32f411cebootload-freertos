@@ -12,6 +12,9 @@
 #define WAIT_FOR_BOOT_MODE_TIME_TICK 10000
 
 
+boot_t boot_inst;
+
+
 static void apBootInitLoop(void);
 
 
@@ -25,7 +28,9 @@ void apBootInit(void)
 
 void apBootSaveFirmware(void)
 {
-
+    boot_inst.writing_address = boot_inst.start_address;
+    apFlashWriteData(boot_inst.writing_address, boot_inst.file_writer, boot_inst.received_file_length);
+    boot_inst.writing_address += boot_inst.received_file_length;
 }
 
 void apBootJumpFirmware(void)

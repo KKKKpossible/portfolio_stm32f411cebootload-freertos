@@ -24,6 +24,6 @@ extern ap_sys_t ap_sys_inst;
 
 void apSysStateInit(void);
 void apSysStateOperate(void);
-
+void txLoop(void);
 
 #endif /* AP_AP_USER_AP_SYS_STATE_H_ */

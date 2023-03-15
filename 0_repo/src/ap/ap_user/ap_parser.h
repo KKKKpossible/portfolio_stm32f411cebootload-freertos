@@ -28,9 +28,8 @@ enum special_bit_enum
 enum protocol_index_enum
 {
     AP_PAR_PIE_CMD = 0,
-    AP_PAR_PIE_DATA_LENGTH_MSB,
-    AP_PAR_PIE_DATA_LENGTH_LSB,
-    AP_PAR_PIE_DATA_DATA_START,
+    AP_PAR_PIE_DATA_LENGTH,
+    AP_PAR_PIE_DATA_START,
 };
 
 typedef struct

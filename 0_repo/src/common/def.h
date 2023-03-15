@@ -15,7 +15,8 @@
 #include "stdbool.h"
 
 
-#define DEF_COMM_BUFF_LENGTH (255U)
+#define DEF_COMM_BUFF_LENGTH      (255U)
+#define DEF_COMM_TX_WRITER_LENGTH (8U)
 
 
 #endif /* COMMON_DEF_H_ */

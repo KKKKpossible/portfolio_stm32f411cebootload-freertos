@@ -45,7 +45,7 @@ namespace WinFormsApp1
         }
         public byte parseOperate()
         {
-            byte ret = (byte)Def.CMD_ENUM.TX_END;
+            byte ret = (byte)Def.CMD_ENUM.CMD_END;
             byte checksum_buff = parse_buffer[parse_buffer.Count - 1];
             byte checksum_cal = 0;
             tx_buffer.Clear();
@@ -63,13 +63,13 @@ namespace WinFormsApp1
             }
             if (checksum_cal == checksum_buff)
             {
-                switch (parse_buffer[(int)Def.COMM_PROTOCOL_INDEX.CMD_INDEX])
+                switch (parse_buffer[(int)Def.COMM_PARSE_PROTOCOL_INDEX.CMD_INDEX])
                 {
                     case (byte)Def.CMD_ENUM.TX_START:
                         ret = (byte)Def.CMD_ENUM.FILE_WRITE;
                         break;
                     case (byte)Def.CMD_ENUM.FILE_WRITE:
-                        if(File_writer.Count == 0)
+                        if(file_writer.Count == 0)
                         {
                             ret = (byte)Def.CMD_ENUM.TX_END;
                         }
@@ -82,6 +82,14 @@ namespace WinFormsApp1
                         ret = (byte)Def.CMD_ENUM.TX_END;
                         break;
                     case (byte)Def.CMD_ENUM.TX_END:
+                        int length = parse_buffer[(int)Def.COMM_PARSE_PROTOCOL_INDEX.DATA_LENGTH];
+                        UInt32 tick_cost = 0;
+                        tick_cost = (UInt32)(parse_buffer[(int)Def.COMM_PARSE_PROTOCOL_INDEX.DATA_START] << 24);
+                        tick_cost += (UInt32)(parse_buffer[(int)Def.COMM_PARSE_PROTOCOL_INDEX.DATA_START + 1] << 16);
+                        tick_cost += (UInt32)(parse_buffer[(int)Def.COMM_PARSE_PROTOCOL_INDEX.DATA_START + 2] << 8);
+                        tick_cost += (UInt32)(parse_buffer[(int)Def.COMM_PARSE_PROTOCOL_INDEX.DATA_START + 3]);
+                        MessageBox.Show("DONE\r\n" + (tick_cost / 1000).ToString() + " sec costed");
+                        ret = (byte)Def.CMD_ENUM.CMD_END;
                         break;
                     case (byte)Def.CMD_ENUM.ERR_CHECKSUM:
                         break;
