@@ -42,7 +42,7 @@ namespace WinFormsApp1
 
         public enum CMD_ENUM
         {
-            TX_START, FILE_WRITE, FILE_READ, TX_END, ERR_CHECKSUM, ERR_TIMEOUT, CMD_END
+            TX_START, FILE_WRITE, FILE_READ, TX_END, ERR_CHECKSUM, ERR_TIMEOUT, ERR_FLASH_RANGE, CMD_LENGTH
         };
 
         public enum PACKET

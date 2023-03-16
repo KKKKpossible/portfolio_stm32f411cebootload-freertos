@@ -45,7 +45,7 @@ namespace WinFormsApp1
         }
         public byte parseOperate()
         {
-            byte ret = (byte)Def.CMD_ENUM.CMD_END;
+            byte ret = (byte)Def.CMD_ENUM.CMD_LENGTH;
             byte checksum_buff = parse_buffer[parse_buffer.Count - 1];
             byte checksum_cal = 0;
             tx_buffer.Clear();
@@ -89,11 +89,13 @@ namespace WinFormsApp1
                         tick_cost += (UInt32)(parse_buffer[(int)Def.COMM_PARSE_PROTOCOL_INDEX.DATA_START + 2] << 8);
                         tick_cost += (UInt32)(parse_buffer[(int)Def.COMM_PARSE_PROTOCOL_INDEX.DATA_START + 3]);
                         MessageBox.Show("DONE\r\n" + (tick_cost / 1000).ToString() + " sec costed");
-                        ret = (byte)Def.CMD_ENUM.CMD_END;
+                        ret = (byte)Def.CMD_ENUM.CMD_LENGTH;
                         break;
                     case (byte)Def.CMD_ENUM.ERR_CHECKSUM:
                         break;
                     case (byte)Def.CMD_ENUM.ERR_TIMEOUT:
+                        break;
+                    case (byte)Def.CMD_ENUM.ERR_FLASH_RANGE:
                         break;
                     default:
                         break;

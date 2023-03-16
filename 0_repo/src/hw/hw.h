@@ -19,5 +19,4 @@
 
 void hwInit(void);
 
-
 #endif /* HW_HW_H_ */

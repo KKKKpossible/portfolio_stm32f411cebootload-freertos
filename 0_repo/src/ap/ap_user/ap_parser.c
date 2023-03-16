@@ -9,8 +9,6 @@
 #include "ap_parser.h"
 
 
-
-
 parser_t parser_inst;
 
 
@@ -21,21 +19,20 @@ void apParserInit(void)
 {
 
 }
+int count = 0;
 
 void apParserFetchComm(void)
 {
-    bool catched_special_char = false;
-
     while(ap_comm_inst.rx_head != ap_comm_inst.rx_tail)
     {
         uint8_t data = apCommRxPopByte();
         switch(data)
         {
             case AP_PAR_SBE_SPECIAL:
-                catched_special_char = true;
+                parser_inst.special_char_detected = true;
                 break;
             case AP_PAR_SBE_START:
-                if(catched_special_char == true)
+                if(parser_inst.special_char_detected == true)
                 {
                     parser_inst.head = 0;
                     parser_inst.tail = 0;
@@ -44,10 +41,10 @@ void apParserFetchComm(void)
                 {
                     apParserPush(data);
                 }
-                catched_special_char = false;
+                parser_inst.special_char_detected = false;
                 break;
             case AP_PAR_SBE_STOP:
-                if(catched_special_char == true)
+                if(parser_inst.special_char_detected == true)
                 {
                     apParseOperate();
                 }
@@ -55,10 +52,10 @@ void apParserFetchComm(void)
                 {
                     apParserPush(data);
                 }
-                catched_special_char = false;
+                parser_inst.special_char_detected = false;
                 break;
             case AP_PAR_SBE_CLEAR:
-                if(catched_special_char == true)
+                if(parser_inst.special_char_detected == true)
                 {
                     apParserPush(AP_PAR_SBE_SPECIAL);
                 }
@@ -66,11 +63,11 @@ void apParserFetchComm(void)
                 {
                     apParserPush(data);
                 }
-                catched_special_char = false;
+                parser_inst.special_char_detected = false;
                 break;
             default:
                 apParserPush(data);
-                catched_special_char = false;
+                parser_inst.special_char_detected = false;
                 break;
         }
     }
@@ -102,10 +99,10 @@ void apParseOperate(void)
             ap_sys_inst.cmd_state |= 1 << TX_START;
             if(data_length == 4)
             {
-                boot_inst.start_address |= (uint32_t)((parser_inst.buff[AP_PAR_PIE_DATA_START] << 24) & 0xFF000000);
-                boot_inst.start_address |= (uint32_t)((parser_inst.buff[AP_PAR_PIE_DATA_START + 1]<< 16) & 0x00FF0000);
-                boot_inst.start_address |= (uint32_t)((parser_inst.buff[AP_PAR_PIE_DATA_START + 2] << 8) & 0x0000FF00);
-                boot_inst.start_address |= (uint32_t)((parser_inst.buff[AP_PAR_PIE_DATA_START + 3]) & 0x000000FF);
+                boot_inst.rx_start_address |= (uint32_t)((parser_inst.buff[AP_PAR_PIE_DATA_START] << 24) & 0xFF000000);
+                boot_inst.rx_start_address |= (uint32_t)((parser_inst.buff[AP_PAR_PIE_DATA_START + 1]<< 16) & 0x00FF0000);
+                boot_inst.rx_start_address |= (uint32_t)((parser_inst.buff[AP_PAR_PIE_DATA_START + 2] << 8) & 0x0000FF00);
+                boot_inst.rx_start_address |= (uint32_t)((parser_inst.buff[AP_PAR_PIE_DATA_START + 3]) & 0x000000FF);
 
                 memset(boot_inst.file_writer, '\0', sizeof(boot_inst.file_writer) / sizeof(uint8_t));
                 boot_inst.rx_file_length = 0;

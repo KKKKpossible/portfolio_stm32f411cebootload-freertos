@@ -107,13 +107,13 @@
             this.textBox3.Name = "textBox3";
             this.textBox3.Size = new System.Drawing.Size(601, 23);
             this.textBox3.TabIndex = 6;
-            this.textBox3.Text = "8040000";
+            this.textBox3.Text = "8020000";
             this.textBox3.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             // 
             // timer2
             // 
             this.timer2.Enabled = true;
-            this.timer2.Interval = 10;
+            this.timer2.Interval = 1;
             this.timer2.Tick += new System.EventHandler(this.timer2_Tick);
             // 
             // label1

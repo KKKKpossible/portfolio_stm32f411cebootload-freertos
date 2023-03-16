@@ -245,7 +245,6 @@ namespace WinFormsApp1
                     List<byte> dummy_list_check_special = new List<byte>();
                     byte checksum_dummy = cmd;
 
-
                     list.Add((byte)'*');
                     list.Add(0);
                     list.Add(cmd);

@@ -23,6 +23,9 @@ static bool apAddrInSectorCheck(uint32_t sector_num, uint32_t data_address, uint
 
 void apFlashInit(void)
 {
+    // sector 0 ~ 3: boot loader
+    // sector 4    : tag
+    // sector 5 ~ 7: firmware sector
 	for(int i = 0; i < SECTOR_LENGTH; i++)
 	{
 		switch(i)
@@ -85,7 +88,6 @@ void apFlashErase(uint32_t start_address, uint32_t length)
     int sector_number = 0;
     HAL_StatusTypeDef state;
     FLASH_EraseInitTypeDef erase_init;
-
 
     for(int i = FLASH_SECTOR_0; i < SECTOR_LENGTH; i++)
     {

@@ -14,7 +14,7 @@
 
 enum cmd_enum
 {
-    TX_START, FILE_WRITE, FILE_READ, TX_END, ERR_CHECKSUM, ERR_TIMEOUT
+    TX_START, FILE_WRITE, FILE_READ, TX_END, ERR_CHECKSUM, ERR_TIMEOUT, ERR_FLASH_RANGE, CMD_LENGTH
 };
 
 enum special_bit_enum
@@ -37,6 +37,7 @@ typedef struct
     uint8_t buff[DEF_COMM_BUFF_LENGTH];
     int head;
     int tail;
+    bool special_char_detected;
 }parser_t;
 
 
