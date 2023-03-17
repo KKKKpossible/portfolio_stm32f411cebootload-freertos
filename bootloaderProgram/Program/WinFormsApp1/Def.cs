@@ -52,5 +52,23 @@ namespace WinFormsApp1
             END_CHAR = 1,
             SPECIAL_CLEAR = 2,
         }
+
+        public enum HEX_STRING_INDEX
+        { 
+            START = 0,
+            LENGTH_START = 1,
+            ADDRESS_START = 3,
+            TYPE_START = 7,
+            DATA_START = 9
+        }
+
+        public enum HEX_TYPE_ENUM
+        { 
+            DATA = 0,
+            END = 1,
+            ADDRESS = 4,
+            MDK_ADDRESS = 5
+        }
+
     }
 }

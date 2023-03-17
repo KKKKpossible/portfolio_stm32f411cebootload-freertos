@@ -15,8 +15,11 @@ namespace WinFormsApp1
         SerialPort port = new SerialPort();
         
         
-        List<byte> file_data = new List<byte>();
+        List<byte> file_data_bin = new List<byte>();
         Queue<byte> file_writer = new Queue<byte>();
+        List<string> file_data_hex = new List<string>();
+        List<byte> file_data_parsed = new List<byte>();
+        UInt32 start_address = 0;
 
         Queue<byte> transfer = new Queue<byte>();
         Queue<byte> receiver = new Queue<byte>();
@@ -26,13 +29,16 @@ namespace WinFormsApp1
         public SerialPort Port { get => port; set => port = value; }
 
         public Queue<byte> Receiver { get => receiver; set => receiver = value; }
-        public List<byte> File_data { get => file_data; set => file_data = value; }
         public Queue<byte> Transfer { get => transfer; set => transfer = value; }
         public List<byte> Tx_buffer { get => tx_buffer; set => tx_buffer = value; }
         public bool Parsing_start { get => parsing_start; set => parsing_start = value; }
         public List<byte> Parse_buffer { get => parse_buffer; set => parse_buffer = value; }
         public uint Rx_time_out_tick { get => rx_time_out_tick; set => rx_time_out_tick = value; }
         public Queue<byte> File_writer { get => file_writer; set => file_writer = value; }
+        public List<byte> File_data_bin { get => file_data_bin; set => file_data_bin = value; }
+        public List<string> File_data_hex { get => file_data_hex; set => file_data_hex = value; }
+        public List<byte> File_data_parsed { get => file_data_parsed; set => file_data_parsed = value; }
+        public uint Start_address { get => start_address; set => start_address = value; }
 
         public void clearParseBuffer()
         {
@@ -107,6 +113,87 @@ namespace WinFormsApp1
             }
 
             return ret;
+        }
+
+        public bool parseHexFileDataToBin()
+        {
+            if(checkHexFileLineChecksum(0) == false)
+            {
+                MessageBox.Show("CHECKSUM ERR" + " LINE 0");
+                return false;
+            }
+            byte data_length = Convert.ToByte(file_data_hex[0].Substring((int)Def.HEX_STRING_INDEX.LENGTH_START, 2), 16);
+            byte type = Convert.ToByte(file_data_hex[0].Substring((int)Def.HEX_STRING_INDEX.TYPE_START, 2), 16);
+            start_address = Convert.ToUInt32(file_data_hex[0].Substring((int)Def.HEX_STRING_INDEX.DATA_START, data_length * 2), 16);
+            file_data_parsed = new List<byte>();
+            if (type == (byte)Def.HEX_TYPE_ENUM.ADDRESS)
+            {
+                start_address = start_address << 16;
+            }
+            for(int i = 1; i < file_data_hex.Count; i++)
+            {
+                if(checkHexFileLineChecksum(i) == false)
+                {
+                    MessageBox.Show("CHECKSUM ERR" + " LINE " + i.ToString());
+                    return false;
+                }
+                if(i == 1)
+                {
+                    start_address += Convert.ToUInt32(file_data_hex[i].Substring((int)Def.HEX_STRING_INDEX.ADDRESS_START, 4), 16);
+                }
+                data_length = Convert.ToByte(file_data_hex[i].Substring((int)Def.HEX_STRING_INDEX.LENGTH_START, 2), 16);
+                type = Convert.ToByte(file_data_hex[i].Substring((int)Def.HEX_STRING_INDEX.TYPE_START, 2), 16);
+                
+                switch(type)
+                {
+                    case (byte)Def.HEX_TYPE_ENUM.DATA:
+                        for(int j = 0; j < data_length; j++)
+                        {
+                            byte data = Convert.ToByte(file_data_hex[i].Substring((int)Def.HEX_STRING_INDEX.DATA_START + j * 2, 2), 16);
+                            file_data_parsed.Add(data);
+                        }
+                        break;
+                    case (byte)Def.HEX_TYPE_ENUM.END:
+                        break;
+                    case (byte)Def.HEX_TYPE_ENUM.ADDRESS:
+                        break;
+                    case (byte)Def.HEX_TYPE_ENUM.MDK_ADDRESS:
+                        break;
+                    default:
+                        break;
+                }
+            }
+            return true;
+        }
+
+        public bool checkHexFileLineChecksum(int index)
+        {
+            bool ret = true;
+            try
+            {
+                byte checksum = 0;
+                string string_received_checksum = file_data_hex[index].Substring(file_data_hex[index].Length - 1 - 1);
+                byte received_checksum = Convert.ToByte(string_received_checksum, 16);
+                string data_for_check = file_data_hex[index].Substring((int)Def.HEX_STRING_INDEX.LENGTH_START, (file_data_hex[index].Length - 2 - 1));
+                for (int i = 0; i < data_for_check.Length; i += 2)
+                {
+                    string data = data_for_check.Substring(i, 2);
+                    checksum += Convert.ToByte(data, 16);
+                }
+                checksum ^= 0xFF;
+                checksum += 1;
+
+                if (checksum != received_checksum)
+                {
+                    ret = false;
+                }
+                return ret;
+            }
+            catch
+            {
+                MessageBox.Show("HEX FILE checksum ERROR");
+                return ret;
+            }
         }
     }
 }

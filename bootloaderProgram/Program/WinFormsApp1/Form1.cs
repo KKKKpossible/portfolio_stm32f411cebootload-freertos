@@ -29,33 +29,48 @@ namespace WinFormsApp1
                 string full_file_name = openFileDialog1.SafeFileName;
 
                 textBox1.Text = file_name;
+                comm_inst.File_data_bin.Clear();
+                comm_inst.File_data_hex.Clear();
+                comm_inst.File_data_parsed.Clear();
 
-                var file_stream = new FileStream(file_name, FileMode.Open);
-                
-                using(BinaryReader file_reader = new BinaryReader(file_stream))
+                if (file_name.Contains(".bin") == true)
                 {
-                    long length = file_reader.BaseStream.Length;
-                    comm_inst.File_data = new List<byte>(file_reader.ReadBytes((int)length));
-                    def_inst.File_loaded = true;
+                    var file_stream = new FileStream(file_name, FileMode.Open);
+                    using (BinaryReader file_reader = new BinaryReader(file_stream))
+                    {
+                        long length = file_reader.BaseStream.Length;
+                        comm_inst.File_data_bin = new List<byte>(file_reader.ReadBytes((int)length));
+
+                        def_inst.File_loaded = true;
+                    }
                 }
+                else if (file_name.Contains(".hex") == true)
+                {
+                    string[] lines = File.ReadAllLines(file_name);
+                    
+                    for(int i = 0; i < lines.Length; i++)
+                    {
+                        comm_inst.File_data_hex.Add(lines[i]);
+                    }
+                    comm_inst.parseHexFileDataToBin();
+                    comm_inst.File_data_bin = comm_inst.File_data_parsed;
+                    textBox3.Text = string.Format("{0:X2}", comm_inst.Start_address);
+                }
+
                 switch (def_inst.Button_state)
                 {
                     case 0:
-                        button4.Text = (comm_inst.File_data.Count).ToString() + " Byte";
+                        button4.Text = (comm_inst.File_data_bin.Count).ToString() + " Byte";
                         break;
                     case 1:
-                        button4.Text = (comm_inst.File_data.Count / 1024.0).ToString("F2") + " KB";
+                        button4.Text = (comm_inst.File_data_bin.Count / 1024.0).ToString("F2") + " KB";
                         break;
                     case 2:
-                        button4.Text = ((comm_inst.File_data.Count / 1024.0) / 1024.0).ToString("F2") + " MB";
+                        button4.Text = ((comm_inst.File_data_bin.Count / 1024.0) / 1024.0).ToString("F2") + " MB";
                         break;
                     default:
                         break;
                 }
-            }
-            else
-            {
-                textBox1.Text = "";
             }
         }
 
@@ -66,27 +81,36 @@ namespace WinFormsApp1
 
         private void button2_Click(object sender, EventArgs e)
         {
-            if(comm_inst.Port.IsOpen == false)
+            progressBar1.Value = 0;
+
+            try
             {
-                comm_inst.Port.PortName = comboBox1.Text;
-                comm_inst.Port.BaudRate = 115200;
-                comm_inst.Port.Parity = Parity.None;
-                comm_inst.Port.DataBits = 8;
-                comm_inst.Port.StopBits = StopBits.One;
-                comm_inst.Port.DataReceived += new SerialDataReceivedEventHandler(dataReceived);
-                comm_inst.Port.Open();
-                button3.Text = "OPEN";
+                if (comm_inst.Port.IsOpen == false)
+                {
+                    comm_inst.Port.PortName = comboBox1.Text;
+                    comm_inst.Port.BaudRate = 115200;
+                    comm_inst.Port.Parity = Parity.None;
+                    comm_inst.Port.DataBits = 8;
+                    comm_inst.Port.StopBits = StopBits.One;
+                    comm_inst.Port.DataReceived += new SerialDataReceivedEventHandler(dataReceived);
+                    comm_inst.Port.Open();
+                    button3.Text = "OPEN";
+                }
+                comm_inst.Tx_buffer.Clear();
+                if (comm_inst.File_data_bin.Count != 0)
+                {
+                    comm_inst.File_writer.Clear();
+                }
+                for (int i = 0; i < comm_inst.File_data_bin.Count; i++)
+                {
+                    comm_inst.File_writer.Enqueue(comm_inst.File_data_bin[i]);
+                }
+                startTransmit((byte)Def.CMD_ENUM.TX_START);
             }
-            comm_inst.Tx_buffer.Clear();
-            if (comm_inst.File_data.Count != 0)
+            catch
             {
-                comm_inst.File_writer.Clear();
+                MessageBox.Show("Serial port err");
             }
-            for (int i = 0; i < comm_inst.File_data.Count; i++)
-            {
-                comm_inst.File_writer.Enqueue(comm_inst.File_data[i]);
-            }
-            startTransmit((byte)Def.CMD_ENUM.TX_START);
         }
 
         void dataReceived(object sender, SerialDataReceivedEventArgs e)
@@ -200,11 +224,6 @@ namespace WinFormsApp1
             return ret;
         }
 
-        void checksumReCalibrate(ref byte checksum, int index)
-        {
-            
-        }
-        
         void cmdRetProcedure(List<byte> list, byte cmd)
         {
             byte checksum = cmd;
@@ -252,6 +271,7 @@ namespace WinFormsApp1
 
                     if(def_inst.Trans_data_length_max < comm_inst.File_writer.Count)
                     {
+                        progressBar1.Value += (int)((float)def_inst.Trans_data_length_max / comm_inst.File_data_bin.Count * 100);
                         int data_length = (int)def_inst.Trans_data_length_max;
                         int cancel_data_legnth = 0;
                         for (int i = 0; i < data_length; i++)
@@ -285,6 +305,7 @@ namespace WinFormsApp1
                     {
                         int data_length = (int)comm_inst.File_writer.Count;
                         int cancel_data_legnth = 0;
+                        progressBar1.Value = 99;
                         for (int i = 0; i < data_length; i++)
                         {
                             byte data = comm_inst.File_writer.Dequeue();
@@ -320,6 +341,7 @@ namespace WinFormsApp1
                     list.Clear();
                     break;
                 case (byte)Def.CMD_ENUM.TX_END:
+                    progressBar1.Value = 0;
                     list.Add((byte)'*');
                     list.Add(0);
                     list.Add(cmd);
@@ -402,13 +424,13 @@ namespace WinFormsApp1
                 switch (def_inst.Button_state)
                 {
                     case 0:
-                        button4.Text = (comm_inst.File_data.Count).ToString() + " Byte";
+                        button4.Text = (comm_inst.File_data_bin.Count).ToString() + " Byte";
                         break;
                     case 1:
-                        button4.Text = (comm_inst.File_data.Count / 1024.0).ToString("F2") + " KB";
+                        button4.Text = (comm_inst.File_data_bin.Count / 1024.0).ToString("F2") + " KB";
                         break;
                     case 2:
-                        button4.Text = ((comm_inst.File_data.Count / 1024.0) / 1024.0).ToString("F2") + " MB";
+                        button4.Text = ((comm_inst.File_data_bin.Count / 1024.0) / 1024.0).ToString("F2") + " MB";
                         break;
                     default:
                         break;
