@@ -1,2 +1,5 @@
 0_repo/Debug/
 f411_download_forBootLoad/Debug/
+wpfBootloaderProgram/bootloader_program/bootloader_program/bin/Debug/net6.0-windows/bootloader_program.deps.json
+wpfBootloaderProgram/bootloader_program/bootloader_program/bin/
+wpfBootloaderProgram/bootloader_program/bootloader_program/obj/
